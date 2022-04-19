@@ -1,13 +1,13 @@
 const express = require('express')
 const app = express()
-const port = 4000;
-const usersRoute = require('./routes/user')
+const port = process.env.PORT | 4000;
+const router = require('./routes/app.route')
 
 
 app.use(express.json())
-app.use('/api/v1', usersRoute)
+app.use('/', router)
 
 
 app.listen(port, function () {
-    console.log('Contoh server berjalan di port 4000!')
+    console.log(`App running on http://localhost:${port}`)
 })
