@@ -12,15 +12,15 @@ password: '', // password of your database username
 port: '5432'
 ```
 
-Then, at the command prompt, type
-```sh
-$ npm run db:migrate
-```
-
 ## Install
 
 ```sh
 $ npm install
+```
+
+Then, at the command prompt, type
+```sh
+$ npm run db:migrate
 ```
 
 ## Usage

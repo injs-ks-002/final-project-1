@@ -7,18 +7,10 @@ exports.signup = async(req, res) => {
     const body = req.body;
     const email = body.email;
     const password = body.password;
-    if (email.length == 0 || password.length == 0) {
-        res.status(402).json({
-            message: "email or password is required",
-        });
-    } else if (!email.trim().length || !password.trim().length) {
-        res.status(402).json({
-            message: "email or password dont just spaces",
-        });
-    } else {
-        db.query("SELECT * FROM users WHERE email = $1", [email], (err, user) => {
+    try {
+        await db.query("SELECT * FROM users WHERE email = $1", [email], (err, user) => {
             if (user.rows.length) {
-                return res.status(402).json({
+                return res.status(409).json({
                     message: "email already exist",
                 });
             } else {
@@ -27,39 +19,47 @@ exports.signup = async(req, res) => {
                 db.query(
                     "INSERT INTO users (email, password) values($1, $2)", [email, hash],
                     (err, result) => {
-                        console.log(result);
                         if (err) {
                             console.log(err)
-                           return res.status(401).json(err);
+                           return res.status(400).json({
+                               "status": 400,
+                               "message": "Failed for register account"
+                           });
+                        } else {
+                            db.query("SELECT * FROM users WHERE email = $1", [email], (err, users) => {
+                                let id = users.rows.map(data => data.id).join(", ")
+                                const token = generateToken({
+                                    id: parseInt(id),
+                                    email: email,
+                                });
+                                res.status(201).json({
+                                    email: email,
+                                    token: token,
+                                });
+                            })
                         }
-                        const token = generateToken({
-                            email: email,
-                        });
-                        res.status(200).json({
-                            message: "registration succes",
-                            email: email,
-                            token: token,
-                        });
                     }
                 );
             }
         });
+    } catch(err) {
+        console.log(err)
+        res.status(503).send({
+            status: 503,
+            message: 'Internal server error'
+        })
     }
 };
 exports.signIn = async(req, res) => {
     const body = req.body;
     const email = body.email;
     const password = body.password;
-    if (email.length == 0 || password.length == 0) {
-        res.status(402).json({
-            message: "email or password is required",
-        });
-    } else {
+    try {
         await db.query(
             "SELECT * FROM users WHERE email = $1", [email],
             (err, user) => {
                 if (!user.rows.length) {
-                    res.status(400).json({
+                    return res.status(404).json({
                         message: "email not found",
                     });
                 }
@@ -71,7 +71,7 @@ exports.signIn = async(req, res) => {
                 });
                 const isValid = bcrypt.compareSync(password, userPassword);
                 if (!isValid) {
-                    return res.status(401).send({
+                    return res.status(403).send({
                         message: "email and password not match",
                     });
                 }
@@ -80,10 +80,15 @@ exports.signIn = async(req, res) => {
                     email: user_email,
                 });
                 res.status(200).send({
-                    status: "SUKSES",
-                    token: token,
+                    token: token
                 });
             }
         );
+    } catch(err) {
+        console.log(err)
+        res.status(503).send({
+            status: 503,
+            message: 'Internal server error'
+        })
     }
 };

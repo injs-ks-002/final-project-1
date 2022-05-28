@@ -4,7 +4,7 @@ const privateKey = 'varchar'
 function generateToken(payload) {
     return jwt.sign( payload, privateKey, {
         algorithm: 'HS256',
-        expiresIn: "1h"
+        expiresIn: "1d"
    });
 }
 
